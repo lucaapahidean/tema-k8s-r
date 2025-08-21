@@ -1,0 +1,18 @@
+{
+  "name": "ai-backend",
+  "version": "1.0.0",
+  "description": "Backend for AI OCR processing with Azure services",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "multer": "^1.4.5-lts.1",
+    "@azure/storage-blob": "^12.14.0",
+    "@azure/cognitiveservices-computervision": "^8.2.0",
+    "@azure/ms-rest-azure-js": "^2.1.0",
+    "mssql": "^9.1.1",
+    "cors": "^2.8.5"
+  }
+}

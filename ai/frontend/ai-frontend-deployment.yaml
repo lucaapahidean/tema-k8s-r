@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-frontend
+  labels:
+    app: ai-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ai-frontend
+  template:
+    metadata:
+      labels:
+        app: ai-frontend
+    spec:
+      containers:
+      - name: ai-frontend
+        image: localhost:32000/ai-frontend:latest
+        ports:
+        - containerPort: 80

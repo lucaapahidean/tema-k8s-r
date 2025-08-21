@@ -1,0 +1,32 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  # Drupal resources
+  - drupal/drupal-pvc.yaml
+  - drupal/drupal-db-pvc.yaml
+  - drupal/drupal-db-deployment.yaml
+  - drupal/drupal-db-service.yaml
+  - drupal/drupal-install-job.yaml
+  - drupal/drupal-deployment.yaml
+  - drupal/drupal-service.yaml
+  
+  # Chat resources
+  - chat/db/chat-db-pvc.yaml
+  - chat/db/chat-db-deployment.yaml
+  - chat/db/chat-db-service.yaml
+  - chat/backend/chat-backend-deployment.yaml
+  - chat/backend/chat-backend-service.yaml
+  - chat/frontend/chat-frontend-deployment.yaml
+  - chat/frontend/chat-frontend-service.yaml
+  - chat/redis/redis-deployment.yaml
+  - chat/redis/redis-service.yaml
+  
+  # AI resources
+  - ai/frontend/ai-frontend-deployment.yaml
+  - ai/frontend/ai-frontend-service.yaml
+  - ai/backend/ai-backend-deployment.yaml
+  - ai/backend/ai-backend-service.yaml
+  
+  # Secrets
+  - secrets/azure-secrets.yaml

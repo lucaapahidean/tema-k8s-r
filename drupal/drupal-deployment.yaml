@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: drupal
+  labels:
+    app: drupal
+spec:
+  replicas: 6
+  selector:
+    matchLabels:
+      app: drupal
+  template:
+    metadata:
+      labels:
+        app: drupal
+    spec:
+      containers:
+        - name: drupal
+          image: localhost:32000/custom-drupal:latest
+          ports:
+            - containerPort: 80
+          env:
+            - name: DRUPAL_DATABASE_HOST
+              value: "drupal-db"
+            - name: DRUPAL_DATABASE_PORT
+              value: "3306"
+            - name: DRUPAL_DATABASE_NAME
+              value: "drupal"
+            - name: DRUPAL_DATABASE_USERNAME
+              value: "drupal"
+            - name: DRUPAL_DATABASE_PASSWORD
+              value: "drupalpassword"
+            - name: DRUPAL_HASH_SALT
+              value: "f9a8u7c0xzVCBVDNkLsKqUB02PU9EYhZxLd1jQUi"
+            - name: PHP_FPM_CLEAR_ENV
+              value: "no"
+          volumeMounts:
+            - name: drupal-files
+              mountPath: /var/www/html/sites/default/files
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 120
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 180
+            periodSeconds: 20
+      volumes:
+        - name: drupal-files
+          persistentVolumeClaim:
+            claimName: drupal-files-pvc

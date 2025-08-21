@@ -1,0 +1,55 @@
+# Dependente Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+yarn-debug.log
+
+# Fisiere build Vue
+/dist/
+/build/
+
+# Fisiere locale de configurare
+.env
+.env.local
+.env.*.local
+
+# Log-uri
+logs/
+*.log
+
+# Fisiere IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Fisiere Kubernetes generate
+kubectl-edit-*.yaml
+
+# Fisiere temporare
+*.tmp
+*.temp
+tmp/
+
+# Fisiere de cache
+.cache/
+.npm/
+
+# Fisiere Docker
+.docker/
+
+# Fisiere build
+build/
+dist/
+out/
+
+# Fisiere personalizate
+secrets.yaml
+credentials.json
+
+# Alte fisiere
+.DS_Store
+Thumbs.db
+
+azure-secrets.yaml
