@@ -99,7 +99,7 @@ docker push localhost:32000/ai-backend:latest
 docker build -t localhost:32000/ai-frontend:latest ./ai/frontend
 docker push localhost:32000/ai-frontend:latest
 
-# Drupal Custom (versiune nouă simplificată)
+# Wordpress
 docker build -t localhost:32000/custom-wordpress:latest ./wordpress
 docker push localhost:32000/custom-wordpress:latest
 ```
