@@ -5,7 +5,7 @@ metadata:
   labels:
     app: chat-backend
 spec:
-  replicas: 5
+  replicas: 2  # Conform cerințelor: 2 replici
   selector:
     matchLabels:
       app: chat-backend
@@ -18,11 +18,32 @@ spec:
       - name: chat-backend
         image: localhost:32000/chat-backend:latest
         ports:
-        - containerPort: 3000
+        - containerPort: 80  # Nginx expune pe portul 80
         env:
         - name: PORT
-          value: "3000"
+          value: "3000"  # FastAPI rulează pe 3000, Nginx proxy pe 80
         - name: REDIS_URL
           value: "redis://redis:6379"
         - name: MONGO_URL
           value: "mongodb://chat-db:27017/chatdb"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 90
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        # Starter container să aștepte dependențele
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "sleep 10"]
