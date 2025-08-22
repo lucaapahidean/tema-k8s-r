@@ -34,9 +34,28 @@ spec:
             command:
             - sh
             - -c
-            - "mysqladmin ping -u root -p$MYSQL_ROOT_PASSWORD"
-          initialDelaySeconds: 30
+            - "mysqladmin ping -h 127.0.0.1 -u root -p$MYSQL_ROOT_PASSWORD"
+          initialDelaySeconds: 60
           periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 6
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - "mysqladmin ping -h 127.0.0.1 -u root -p$MYSQL_ROOT_PASSWORD"
+          initialDelaySeconds: 120
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "200m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
       volumes:
       - name: mysql-storage
         persistentVolumeClaim:

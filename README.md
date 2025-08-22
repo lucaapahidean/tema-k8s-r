@@ -89,6 +89,10 @@ docker push localhost:32000/ai-backend:latest
 # AI Frontend
 docker build -t localhost:32000/ai-frontend:latest ./ai/frontend
 docker push localhost:32000/ai-frontend:latest
+
+# Wordpress
+docker build -t localhost:32000/custom-wordpress:latest ./wordpress
+docker push localhost:32000/custom-wordpress:latest
 ```
 
 ### 3. 🎯 Deploy complet (o singură comandă)
