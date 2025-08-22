@@ -16,8 +16,8 @@ app.use(express.json());
 const azureConfig = {
     storageConnectionString: process.env.AZURE_STORAGE_CONNECTION_STRING,
     containerName: process.env.AZURE_CONTAINER_NAME || 'images',
-    ocrEndpoint: process.env.AZURE_OCR_ENDPOINT,
-    ocrApiKey: process.env.AZURE_OCR_API_KEY,
+    computerVisionEndpoint: process.env.AZURE_OCR_ENDPOINT,
+    computerVisionApiKey: process.env.AZURE_OCR_API_KEY,
     sqlConnectionString: process.env.AZURE_SQL_CONNECTION_STRING
 };
 
@@ -137,15 +137,15 @@ try {
     console.error('Error initializing Blob Storage:', err.message);
 }
 
-// Initializare Azure Computer Vision pentru OCR
+// Initializare Azure Computer Vision pentru Image Description
 let computerVisionClient;
 try {
-    if (azureConfig.ocrApiKey && azureConfig.ocrEndpoint) {
-        const cognitiveServiceCredentials = new CognitiveServicesCredentials(azureConfig.ocrApiKey);
-        computerVisionClient = new ComputerVisionClient(cognitiveServiceCredentials, azureConfig.ocrEndpoint);
-        console.log('Azure Computer Vision client initialized');
+    if (azureConfig.computerVisionApiKey && azureConfig.computerVisionEndpoint) {
+        const cognitiveServiceCredentials = new CognitiveServicesCredentials(azureConfig.computerVisionApiKey);
+        computerVisionClient = new ComputerVisionClient(cognitiveServiceCredentials, azureConfig.computerVisionEndpoint);
+        console.log('Azure Computer Vision client initialized for Image Description');
     } else {
-        console.warn('Azure OCR credentials not provided');
+        console.warn('Azure Computer Vision credentials not provided');
     }
 } catch (err) {
     console.error('Error initializing Computer Vision:', err.message);
@@ -161,12 +161,12 @@ async function initializeDatabase() {
         const request = new sql.Request();
 
         await request.query(`
-      IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='ProcessingHistory' AND xtype='U')
-      CREATE TABLE ProcessingHistory (
+      IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='ImageProcessingHistory' AND xtype='U')
+      CREATE TABLE ImageProcessingHistory (
         Id INT IDENTITY(1,1) PRIMARY KEY,
         Filename NVARCHAR(255) NOT NULL,
         BlobUrl NVARCHAR(500) NOT NULL,
-        OcrResult NVARCHAR(MAX),
+        ImageDescription NVARCHAR(MAX),
         ProcessedAt DATETIME2 DEFAULT GETDATE()
       )
     `);
@@ -209,33 +209,37 @@ app.post('/api/process-image', upload.single('image'), async (req, res) => {
         const blobUrl = blockBlobClient.url;
         console.log(`File uploaded to Azure Blob Storage: ${blobUrl}`);
 
-        // 2. Procesare OCR cu Azure Computer Vision
-        let extractedText = '';
+        // 2. Procesare Image Description cu Azure Computer Vision
+        let imageDescription = '';
         try {
             if (!computerVisionClient) {
                 throw new Error('Computer Vision client not initialized');
             }
 
-            const ocrResult = await computerVisionClient.recognizePrintedText(false, blobUrl);
+            // Foloseste analyzeImage cu features pentru description
+            const analysisResult = await computerVisionClient.analyzeImage(blobUrl, {
+                visualFeatures: ['Description']
+            });
 
-            // Proceseaza rezultatul OCR pentru a extrage textul
-            if (ocrResult.regions) {
-                ocrResult.regions.forEach(region => {
-                    region.lines.forEach(line => {
-                        line.words.forEach(word => {
-                            extractedText += word.text + ' ';
-                        });
-                        extractedText += '\n';
-                    });
-                });
+            // Extrage descrierea din rezultat
+            if (analysisResult.description && analysisResult.description.captions && analysisResult.description.captions.length > 0) {
+                const caption = analysisResult.description.captions[0];
+                imageDescription = `${caption.text} (confidence: ${(caption.confidence * 100).toFixed(1)}%)`;
+                
+                // Adauga si tag-urile daca sunt disponibile
+                if (analysisResult.description.tags && analysisResult.description.tags.length > 0) {
+                    const tags = analysisResult.description.tags.slice(0, 5).join(', ');
+                    imageDescription += `\n\nDetected objects/concepts: ${tags}`;
+                }
+            } else {
+                imageDescription = 'No description could be generated for this image';
             }
 
-            if (!extractedText.trim()) {
-                extractedText = 'No text detected in the image';
-            }
-        } catch (ocrError) {
-            console.error('OCR Error:', ocrError.message);
-            extractedText = `OCR processing failed: ${ocrError.message}`;
+            console.log(`Image description generated: ${imageDescription}`);
+
+        } catch (descriptionError) {
+            console.error('Image Description Error:', descriptionError.message);
+            imageDescription = `Image description processing failed: ${descriptionError.message}`;
         }
 
         // 3. Salveaza in Azure SQL Database
@@ -246,8 +250,8 @@ app.post('/api/process-image', upload.single('image'), async (req, res) => {
             await request
                 .input('filename', sql.NVarChar, file.originalname)
                 .input('blobUrl', sql.NVarChar, blobUrl)
-                .input('ocrResult', sql.NVarChar, extractedText.trim())
-                .query('INSERT INTO ProcessingHistory (Filename, BlobUrl, OcrResult) VALUES (@filename, @blobUrl, @ocrResult)');
+                .input('imageDescription', sql.NVarChar, imageDescription.trim())
+                .query('INSERT INTO ImageProcessingHistory (Filename, BlobUrl, ImageDescription) VALUES (@filename, @blobUrl, @imageDescription)');
 
             console.log('Record saved to database');
         } catch (dbError) {
@@ -263,7 +267,7 @@ app.post('/api/process-image', upload.single('image'), async (req, res) => {
             success: true,
             filename: file.originalname,
             blobUrl: blobUrl,
-            ocrResult: extractedText.trim(),
+            imageDescription: imageDescription.trim(),
             processedAt: new Date().toISOString()
         });
 
@@ -287,7 +291,7 @@ app.get('/api/history', async (req, res) => {
         await sql.connect(sqlConfig);
         const request = new sql.Request();
 
-        const result = await request.query('SELECT * FROM ProcessingHistory ORDER BY ProcessedAt DESC');
+        const result = await request.query('SELECT * FROM ImageProcessingHistory ORDER BY ProcessedAt DESC');
 
         res.json({
             success: true,
@@ -312,7 +316,7 @@ app.get('/api/result/:id', async (req, res) => {
 
         const result = await request
             .input('id', sql.Int, id)
-            .query('SELECT * FROM ProcessingHistory WHERE Id = @id');
+            .query('SELECT * FROM ImageProcessingHistory WHERE Id = @id');
 
         if (result.recordset.length === 0) {
             return res.status(404).json({ error: 'Result not found' });
@@ -349,9 +353,9 @@ app.get('/api/debug', (req, res) => {
     res.json({
         environment: {
             hasStorageConnectionString: !!process.env.AZURE_STORAGE_CONNECTION_STRING,
-            hasOcrApiKey: !!process.env.AZURE_OCR_API_KEY,
+            hasComputerVisionApiKey: !!process.env.AZURE_OCR_API_KEY,
             hasSqlConnectionString: !!process.env.AZURE_SQL_CONNECTION_STRING,
-            ocrEndpoint: process.env.AZURE_OCR_ENDPOINT,
+            computerVisionEndpoint: process.env.AZURE_OCR_ENDPOINT,
             containerName: process.env.AZURE_CONTAINER_NAME
         },
         services: {
@@ -364,9 +368,7 @@ app.get('/api/debug', (req, res) => {
             database: sqlConfig.database,
             user: sqlConfig.user,
             port: sqlConfig.port,
-            passwordLength: sqlConfig.password?.length,
-            passwordFirst3Chars: sqlConfig.password?.substring(0, 3),
-            passwordLast3Chars: sqlConfig.password?.substring(sqlConfig.password.length - 3)
+            passwordLength: sqlConfig.password?.length
         } : null
     });
 });
@@ -376,5 +378,5 @@ initializeDatabase();
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
-    console.log(`AI Backend server running on port ${PORT}`);
+    console.log(`AI Image Description Backend server running on port ${PORT}`);
 });

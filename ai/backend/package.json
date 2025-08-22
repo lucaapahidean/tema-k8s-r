@@ -1,7 +1,7 @@
 {
   "name": "ai-backend",
   "version": "1.0.0",
-  "description": "Backend for AI OCR processing with Azure services",
+  "description": "Backend for AI Image Description processing with Azure services",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

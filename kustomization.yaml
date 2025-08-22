@@ -2,15 +2,15 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  # Drupal resources
-  - drupal/drupal-pvc.yaml
-  - drupal/drupal-db-pvc.yaml
-  - drupal/drupal-db-deployment.yaml
-  - drupal/drupal-db-service.yaml
-  - drupal/drupal-install-job.yaml
-  - drupal/drupal-deployment.yaml
-  - drupal/drupal-service.yaml
-  
+  # Wordpress resources
+  - wordpress/wordpress-db-pvc.yaml
+  - wordpress/wordpress-db-deployment.yaml
+  - wordpress/wordpress-db-service.yaml
+  - wordpress/wordpress-pvc.yaml
+  - wordpress/wordpress-config.yaml
+  - wordpress/wordpress-deployment.yaml
+  - wordpress/wordpress-service.yaml
+
   # Chat resources
   - chat/db/chat-db-pvc.yaml
   - chat/db/chat-db-deployment.yaml

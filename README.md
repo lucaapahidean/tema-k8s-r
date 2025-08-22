@@ -66,22 +66,13 @@ Editează `secrets/azure-secrets.yaml` cu credențialele tale (codificate în ba
 
 ## 🚀 Instalare și deployment
 
-### Metoda 1: Script automat (Recomandat)
-```bash
-# Face totul automat: build, push, deploy
-chmod +x build-and-deploy.sh
-./build-and-deploy.sh
-```
-
-### Metoda 2: Manuală pas cu pas
-
-#### 1. 🔧 Configurare secrete Azure
+### 1. 🔧 Configurare secrete Azure
 ```bash
 # Editează secrets/azure-secrets.yaml cu credențialele tale
 nano secrets/azure-secrets.yaml
 ```
 
-#### 2. 🏗️ Build și push imagini
+### 2. 🏗️ Build și push imagini
 ```bash
 # Chat Backend
 docker build -t localhost:32000/chat-backend:latest ./chat/backend
@@ -98,15 +89,32 @@ docker push localhost:32000/ai-backend:latest
 # AI Frontend
 docker build -t localhost:32000/ai-frontend:latest ./ai/frontend
 docker push localhost:32000/ai-frontend:latest
-
-# Wordpress
-docker build -t localhost:32000/custom-wordpress:latest ./wordpress
-docker push localhost:32000/custom-wordpress:latest
 ```
 
-#### 3. 🎯 Deploy complet (o singură comandă)
+### 3. 🎯 Deploy complet (o singură comandă)
 ```bash
 microk8s kubectl apply -k .
+```
+
+## 🧹 Ștergerea resurselor
+
+### Ștergere completă automată
+```bash
+# Șterge toate resursele create de acest proiect
+microk8s kubectl delete -k .
+```
+
+### 🐳 Curățare imagini Docker
+```bash
+# Șterge imaginile custom din registry local
+docker rmi localhost:32000/chat-backend:latest
+docker rmi localhost:32000/chat-frontend:latest  
+docker rmi localhost:32000/ai-backend:latest
+docker rmi localhost:32000/ai-frontend:latest
+docker rmi localhost:32000/custom-wordpress:latest
+
+# Curățare completă imagini nefolosite
+docker system prune -a
 ```
 
 ## ✅ Conformitate cerințe temă

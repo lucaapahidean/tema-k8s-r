@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wordpress-db
+  labels:
+    app: wordpress-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wordpress-db
+  template:
+    metadata:
+      labels:
+        app: wordpress-db
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:8.0
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: "rootpassword123"
+        - name: MYSQL_DATABASE
+          value: "wordpress"
+        - name: MYSQL_USER
+          value: "wpuser"
+        - name: MYSQL_PASSWORD
+          value: "wppassword123"
+        ports:
+        - containerPort: 3306
+        volumeMounts:
+        - name: mysql-storage
+          mountPath: /var/lib/mysql
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - "mysqladmin ping -u root -p$MYSQL_ROOT_PASSWORD"
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - "mysqladmin ping -u root -p$MYSQL_ROOT_PASSWORD"
+          initialDelaySeconds: 60
+          periodSeconds: 30
+      volumes:
+      - name: mysql-storage
+        persistentVolumeClaim:
+          claimName: wordpress-db-pvc
