@@ -43,7 +43,7 @@ function App() {
     }
 
     // Hardcoded fallback (update with your deployment IP)
-    return '135.235.170.64';
+    return '192.168.122.125'; // Updated with your IP
   };
 
   // Connect to WebSocket
@@ -68,18 +68,29 @@ function App() {
       };
 
       ws.onmessage = (event) => {
+        console.log('📨 Received WebSocket message:', event.data); // DEBUG LOG
         try {
           const data = JSON.parse(event.data);
+          console.log('📨 Parsed message data:', data); // DEBUG LOG
 
           if (data.type === 'history') {
+            console.log('📚 Setting message history:', data.data || []);
             setMessages(data.data || []);
             scrollToBottom();
           } else if (data.type === 'message') {
-            setMessages(prev => [...prev, data.data]);
+            console.log('💬 Adding new message:', data.data);
+            setMessages(prev => {
+              const newMessages = [...prev, data.data];
+              console.log('💬 Updated messages array:', newMessages);
+              return newMessages;
+            });
             scrollToBottom();
+          } else {
+            console.log('❓ Unknown message type:', data.type);
           }
         } catch (error) {
-          console.error('Error parsing WebSocket message:', error);
+          console.error('❌ Error parsing WebSocket message:', error);
+          console.error('❌ Raw message:', event.data);
         }
       };
 
@@ -114,6 +125,10 @@ function App() {
 
   // Send message
   const sendMessage = () => {
+    console.log('🚀 Attempting to send message...'); // DEBUG LOG
+    console.log('🚀 Socket state:', socket ? socket.readyState : 'null'); // DEBUG LOG
+    console.log('🚀 WebSocket.OPEN:', WebSocket.OPEN); // DEBUG LOG
+    
     if (!socket || socket.readyState !== WebSocket.OPEN) {
       alert('Not connected to chat server. Please wait for connection or refresh the page.');
       return;
@@ -129,11 +144,14 @@ function App() {
       text: newMessage.trim()
     };
 
+    console.log('📤 Sending message:', message); // DEBUG LOG
+
     try {
       socket.send(JSON.stringify(message));
+      console.log('✅ Message sent successfully'); // DEBUG LOG
       setNewMessage('');
     } catch (error) {
-      console.error('Failed to send message:', error);
+      console.error('❌ Failed to send message:', error);
       alert('Failed to send message. Please check connection and try again.');
     }
   };
@@ -181,19 +199,26 @@ function App() {
 
   // Scroll to bottom when messages change
   useEffect(() => {
+    console.log('📋 Messages updated, current count:', messages.length); // DEBUG LOG
     scrollToBottom();
   }, [messages]);
 
   return (
     <div id="app">
-      <h1>Live Chat</h1>
+      <h1>Live Chat (Debug Version)</h1>
       <div className="chat-container">
         <div className="messages" ref={messagesContainerRef}>
-          {messages.map((msg, index) => (
-            <div key={index} className="message">
-              <strong>{msg.username}</strong> ({formatTime(msg.timestamp)}): {msg.message}
+          {messages.length === 0 ? (
+            <div style={{textAlign: 'center', color: '#666', fontStyle: 'italic', padding: '20px'}}>
+              No messages yet. Start the conversation!
             </div>
-          ))}
+          ) : (
+            messages.map((msg, index) => (
+              <div key={index} className="message">
+                <strong>{msg.username}</strong> ({formatTime(msg.timestamp)}): {msg.message}
+              </div>
+            ))
+          )}
         </div>
         <div className="input-area">
           <input
@@ -218,6 +243,7 @@ function App() {
         <div className="connection-status">
           <span className={getConnectionStatusClass()}>{connectionStatus}</span>
           {wsUrl && <small>Connecting to: {wsUrl}</small>}
+          <small>Messages: {messages.length}</small>
         </div>
       </div>
     </div>
