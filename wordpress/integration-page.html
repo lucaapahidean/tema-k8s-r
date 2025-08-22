@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fault Tolerant Systems - Integrated Platform</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: rgba(255,255,255,0.95);
+            border-radius: 12px;
+            padding: 40px;
+            margin-bottom: 30px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .header h1 {
+            color: #333;
+            margin: 0 0 15px 0;
+            font-size: 2.5em;
+            font-weight: 700;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 1.2em;
+            margin: 0;
+        }
+        
+        .app-section {
+            background: rgba(255,255,255,0.95);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .app-section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+        }
+        
+        .app-section h2 {
+            color: #4f46e5;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 1.8em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .iframe-container {
+            width: 100%;
+            height: 600px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #f9fafb;
+            position: relative;
+        }
+        
+        .iframe-container::before {
+            content: 'Loading application...';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #6b7280;
+            font-size: 1.1em;
+            z-index: 1;
+        }
+        
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .description {
+            color: #6b7280;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+        
+        .tech-stack {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            border-left: 4px solid #4f46e5;
+        }
+        
+        .tech-stack h4 {
+            margin: 0 0 10px 0;
+            color: #374151;
+            font-size: 1.1em;
+        }
+        
+        .tech-stack ul {
+            margin: 0;
+            padding-left: 20px;
+            color: #6b7280;
+        }
+        
+        .tech-stack li {
+            margin-bottom: 5px;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            background: #10b981;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        @media (max-width: 768px) {
+            .iframe-container {
+                height: 500px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .header p {
+                font-size: 1em;
+            }
+            
+            .app-section {
+                padding: 20px;
+            }
+        }
+        
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255,255,255,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            transition: opacity 0.3s ease;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #4f46e5;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Cloud-Native Platform</h1>
+            <p>Integrated Kubernetes deployment with WordPress CMS, Real-time Chat, and AI Applications</p>
+        </div>
+        
+        <div class="app-section">
+            <h2>
+                <span class="status-indicator"></span>
+                💬 Real-time Chat Application
+            </h2>
+            <p class="description">
+                Connect with other users in real-time using our WebSocket-powered chat application. 
+                Messages are persisted in MongoDB with Redis pub/sub for scalable real-time delivery across multiple backend instances.
+            </p>
+            <div class="iframe-container">
+                <div class="loading-overlay" id="chat-loading">
+                    <div class="spinner"></div>
+                </div>
+                <iframe 
+                    src="" 
+                    id="chat-iframe"
+                    title="Chat Application"
+                    allow="clipboard-write"
+                    onload="hideLoading('chat-loading')">
+                </iframe>
+            </div>
+            <div class="tech-stack">
+                <h4>Technical Architecture</h4>
+                <ul>
+                    <li><strong>Backend:</strong> Python WebSocket server with Nginx (2 replicas)</li>
+                    <li><strong>Frontend:</strong> React SPA with real-time messaging</li>
+                    <li><strong>Database:</strong> MongoDB for message persistence</li>
+                    <li><strong>Pub/Sub:</strong> Redis for WebSocket scaling</li>
+                    <li><strong>Load Balancing:</strong> Kubernetes service with session affinity</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="app-section">
+            <h2>
+                <span class="status-indicator"></span>
+                🤖 AI Image Analysis & OCR
+            </h2>
+            <p class="description">
+                Upload images and documents to extract text using Azure Computer Vision services. 
+                All files are securely stored in Azure Blob Storage with metadata tracking in Azure SQL Database.
+            </p>
+            <div class="iframe-container">
+                <div class="loading-overlay" id="ai-loading">
+                    <div class="spinner"></div>
+                </div>
+                <iframe 
+                    src="" 
+                    id="ai-iframe"
+                    title="AI Image Analysis"
+                    allow="clipboard-write"
+                    onload="hideLoading('ai-loading')">
+                </iframe>
+            </div>
+            <div class="tech-stack">
+                <h4>Azure Cloud Integration</h4>
+                <ul>
+                    <li><strong>Computer Vision:</strong> OCR and image description services</li>
+                    <li><strong>Blob Storage:</strong> Secure file storage with SAS tokens</li>
+                    <li><strong>SQL Database:</strong> Metadata and analysis results</li>
+                    <li><strong>Text Analytics:</strong> Sentiment analysis and key phrase extraction</li>
+                    <li><strong>Processing:</strong> Async image analysis pipeline</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function hideLoading(loadingId) {
+            const loading = document.getElementById(loadingId);
+            if (loading) {
+                setTimeout(() => {
+                    loading.style.opacity = '0';
+                    setTimeout(() => {
+                        loading.style.display = 'none';
+                    }, 300);
+                }, 1000);
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const nodeIP = window.location.hostname; 
+            
+            // Configure chat iframe
+            const chatIframe = document.getElementById('chat-iframe');
+            if (chatIframe) {
+                chatIframe.src = `http://${nodeIP}:30090`;
+            }
+            
+            // Configure AI iframe  
+            const aiIframe = document.getElementById('ai-iframe');
+            if (aiIframe) {
+                aiIframe.src = `http://${nodeIP}:30092`;
+            }
+            
+            // Auto-hide loading overlays if iframes don't load
+            setTimeout(() => {
+                const loadings = document.querySelectorAll('.loading-overlay');
+                loadings.forEach(loading => {
+                    if (loading.style.display !== 'none') {
+                        hideLoading(loading.id);
+                    }
+                });
+            }, 5000);
+        });
+        
+        // Handle iframe errors
+        document.getElementById('chat-iframe').onerror = function() {
+            hideLoading('chat-loading');
+        };
+        
+        document.getElementById('ai-iframe').onerror = function() {
+            hideLoading('ai-loading');
+        };
+    </script>
+</body>
+</html>

@@ -1,31 +1,29 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: wordpress-db
-  labels:
-    app: wordpress-db
+  name: mysql-deployment
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: wordpress-db
+      app: mysql
   template:
     metadata:
       labels:
-        app: wordpress-db
+        app: mysql
     spec:
       containers:
       - name: mysql
         image: mysql:8.0
         env:
         - name: MYSQL_ROOT_PASSWORD
-          value: "rootpassword123"
+          value: "rootpassword"
         - name: MYSQL_DATABASE
           value: "wordpress"
         - name: MYSQL_USER
           value: "wpuser"
         - name: MYSQL_PASSWORD
-          value: "wppassword123"
+          value: "wppassword"
         ports:
         - containerPort: 3306
         volumeMounts:
@@ -42,4 +40,4 @@ spec:
       volumes:
       - name: mysql-storage
         persistentVolumeClaim:
-          claimName: wordpress-db-pvc
+          claimName: mysql-pvc

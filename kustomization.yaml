@@ -3,10 +3,9 @@ kind: Kustomization
 
 resources:
   # Wordpress resources
-  - wordpress/wordpress-db-pvc.yaml
-  - wordpress/wordpress-db-deployment.yaml
-  - wordpress/wordpress-db-service.yaml
-  - wordpress/wordpress-pvc.yaml
+  - wordpress/mysql-pvc.yaml
+  - wordpress/mysql-deployment.yaml
+  - wordpress/mysql-service.yaml
   - wordpress/wordpress-config.yaml
   - wordpress/wordpress-deployment.yaml
   - wordpress/wordpress-service.yaml
