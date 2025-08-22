@@ -39,14 +39,6 @@ spec:
             - "mysqladmin ping -u root -p$MYSQL_ROOT_PASSWORD"
           initialDelaySeconds: 30
           periodSeconds: 10
-        livenessProbe:
-          exec:
-            command:
-            - sh
-            - -c
-            - "mysqladmin ping -u root -p$MYSQL_ROOT_PASSWORD"
-          initialDelaySeconds: 60
-          periodSeconds: 30
       volumes:
       - name: mysql-storage
         persistentVolumeClaim:

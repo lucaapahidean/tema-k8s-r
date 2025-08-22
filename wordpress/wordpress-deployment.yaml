@@ -5,7 +5,7 @@ metadata:
   labels:
     app: wordpress
 spec:
-  replicas: 4  # Required by tema: 4 replicas
+  replicas: 4
   selector:
     matchLabels:
       app: wordpress
@@ -14,40 +14,16 @@ spec:
       labels:
         app: wordpress
     spec:
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 100
-            podAffinityTerm:
-              labelSelector:
-                matchExpressions:
-                - key: app
-                  operator: In
-                  values:
-                  - wordpress
-              topologyKey: kubernetes.io/hostname
       initContainers:
-      - name: wordpress-init
+      - name: wait-for-db
         image: wordpress:6.6-apache
-        command: ['/bin/bash', '/init-scripts/init-wordpress.sh']
+        command: ['bash', '/scripts/wait.sh']
         env:
         - name: WORDPRESS_DB_HOST
           value: "wordpress-db:3306"
-        - name: WORDPRESS_DB_USER
-          value: "wpuser"
-        - name: WORDPRESS_DB_PASSWORD
-          value: "wppassword123"
-        - name: WORDPRESS_DB_NAME
-          value: "wordpress"
-        - name: KUBERNETES_NODE_IP
-          valueFrom:
-            fieldRef:
-              fieldPath: status.hostIP
         volumeMounts:
-        - name: wordpress-storage
-          mountPath: /var/www/html
-        - name: init-scripts
-          mountPath: /init-scripts
+        - name: db-check-script
+          mountPath: /scripts
       containers:
       - name: wordpress
         image: wordpress:6.6-apache
@@ -67,33 +43,25 @@ spec:
             define('WP_HOME', 'http://' . $_SERVER['HTTP_HOST']);
             define('WP_SITEURL', 'http://' . $_SERVER['HTTP_HOST']);
             define('FS_METHOD', 'direct');
-            define('WP_MEMORY_LIMIT', '256M');
-        - name: KUBERNETES_NODE_IP
-          valueFrom:
-            fieldRef:
-              fieldPath: status.hostIP
         volumeMounts:
         - name: wordpress-storage
           mountPath: /var/www/html
         readinessProbe:
           httpGet:
-            path: /wp-admin/admin-ajax.php
+            path: /
             port: 80
-          initialDelaySeconds: 60
-          periodSeconds: 10
-          timeoutSeconds: 5
+          initialDelaySeconds: 20
+          periodSeconds: 5
         livenessProbe:
           httpGet:
-            path: /wp-admin/admin-ajax.php
+            path: /
             port: 80
-          initialDelaySeconds: 120
-          periodSeconds: 20
-          timeoutSeconds: 10
+          initialDelaySeconds: 40
+          periodSeconds: 15
       volumes:
       - name: wordpress-storage
         persistentVolumeClaim:
           claimName: wordpress-files-pvc
-      - name: init-scripts
+      - name: db-check-script
         configMap:
           name: wordpress-config
-          defaultMode: 0755
