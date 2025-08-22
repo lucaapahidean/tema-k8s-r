@@ -5,8 +5,8 @@ metadata:
 spec:
   type: NodePort
   ports:
-  - port: 90  # Conform cerințelor: expus pe portul 90
-    targetPort: 80  # Nginx container port
+  - port: 90
+    targetPort: 80
     nodePort: 30090
     protocol: TCP
   selector:

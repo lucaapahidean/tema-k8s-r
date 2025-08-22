@@ -1,32 +1,29 @@
-# Production stage cu Python și Nginx
 FROM python:3.11-alpine
 
-# Install Nginx, wget pentru verificări și dependințe pentru build
-RUN apk add --no-cache nginx gcc musl-dev libffi-dev wget
+# Install Nginx and build dependencies
+RUN apk add --no-cache nginx gcc musl-dev libffi-dev
 
-# Creează directorul pentru aplicație
+# Create app directory
 WORKDIR /app
 
-# Copiază fișierele Python
+# Copy and install Python dependencies
 COPY requirements.txt .
 COPY server.py .
-
-# Instalează dependințele Python
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Configurează Nginx - șterge configurația default și adaugă a noastră
+# Configure Nginx
 RUN rm -f /etc/nginx/conf.d/default.conf /etc/nginx/http.d/default.conf
 COPY nginx.conf /etc/nginx/http.d/chat.conf
 
-# Copiază și face executabil script-ul de start
+# Copy and make start script executable
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
 
-# Creează directoarele necesare pentru Nginx
+# Create required directories for Nginx
 RUN mkdir -p /var/log/nginx /var/lib/nginx/tmp /run/nginx
 
-# Expune portul 80
+# Expose port 80
 EXPOSE 80
 
-# Pornește aplicația
+# Start application
 CMD ["/start.sh"]
