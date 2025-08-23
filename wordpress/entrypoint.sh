@@ -3,29 +3,34 @@ set -e
 
 echo "Starting WordPress container..."
 echo "Pod hostname: $(hostname)"
+echo "Node IP: ${KUBERNETES_NODE_IP:-unknown}"
 
 # Wait for database to be ready
 echo "Waiting for database connection..."
 ATTEMPT=0
-MAX_ATTEMPTS=20
+MAX_ATTEMPTS=30
 
-while ! mysql -h"$WORDPRESS_DB_HOST" -u"$WORDPRESS_DB_USER" -p"$WORDPRESS_DB_PASSWORD" --skip-ssl -e "SELECT 1" >/dev/null 2>&1; do
+while ! mysqladmin ping -h"$WORDPRESS_DB_HOST" -u"$WORDPRESS_DB_USER" -p"$WORDPRESS_DB_PASSWORD" --silent 2>/dev/null; do
     ATTEMPT=$((ATTEMPT + 1))
     echo "Attempt $ATTEMPT/$MAX_ATTEMPTS: Waiting for database..."
     
     if [ $ATTEMPT -ge $MAX_ATTEMPTS ]; then
-        echo "Failed to connect to database, starting Apache anyway..."
-        exec docker-entrypoint.sh "$@"
+        echo "Failed to connect to database after $MAX_ATTEMPTS attempts"
+        echo "Trying to start Apache anyway..."
+        break
     fi
     
-    sleep 3
+    sleep 2
 done
-echo "Database connection established"
 
-# Run WordPress setup with timeout protection
+if [ $ATTEMPT -lt $MAX_ATTEMPTS ]; then
+    echo "Database connection established"
+fi
+
+# Run WordPress setup
 echo "Running WordPress setup..."
-timeout 120 /usr/local/bin/setup-wordpress.sh || {
-    echo "WordPress setup timed out or failed, continuing with Apache..."
+/usr/local/bin/setup-wordpress.sh || {
+    echo "WordPress setup failed, continuing with Apache..."
 }
 
 # Start Apache

@@ -1,3 +1,15 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: wordpress-shared-pvc
+spec:
+  accessModes:
+    - ReadWriteMany  # Important: permite acces la multiple pod-uri
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: microk8s-hostpath
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -12,9 +24,24 @@ spec:
       labels:
         app: wordpress
     spec:
+      initContainers:
+      # Init container to ensure proper permissions
+      - name: fix-permissions
+        image: busybox:1.36
+        command: ['sh', '-c']
+        args:
+          - |
+            echo "Setting up WordPress directory permissions..."
+            mkdir -p /var/www/html
+            chmod -R 777 /var/www/html
+            echo "Permissions fixed"
+        volumeMounts:
+        - name: wordpress-storage
+          mountPath: /var/www/html
       containers:
       - name: wordpress
         image: localhost:32000/custom-wordpress:latest
+        imagePullPolicy: Always
         env:
         - name: WORDPRESS_DB_HOST
           value: "mysql-service"
@@ -24,42 +51,55 @@ spec:
           value: "wppassword"
         - name: WORDPRESS_DB_NAME
           value: "wordpress"
+        - name: WORDPRESS_TABLE_PREFIX
+          value: "wp_"
+        - name: WORDPRESS_DEBUG
+          value: "false"
         - name: KUBERNETES_NODE_IP
           valueFrom:
             fieldRef:
               fieldPath: status.hostIP
         ports:
         - containerPort: 80
+          name: http
+          protocol: TCP
         resources:
           requests:
             memory: "256Mi"
-            cpu: "100m"
+            cpu: "200m"
           limits:
-            memory: "512Mi"
-            cpu: "300m"
+            memory: "768Mi"
+            cpu: "500m"
         volumeMounts:
         - name: wordpress-storage
           mountPath: /var/www/html
         readinessProbe:
           httpGet:
-            path: /
+            path: /wp-admin/install.php
             port: 80
-          # Dăm mai mult timp pentru setup-ul inițial
-          initialDelaySeconds: 120
+            httpHeaders:
+            - name: Host
+              value: "localhost"
+          initialDelaySeconds: 30
           periodSeconds: 10
-          timeoutSeconds: 10
-          failureThreshold: 15
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 10
         livenessProbe:
-          httpGet:
-            path: /
+          tcpSocket:
             port: 80
-          # Mai mult timp pentru liveness să permită setup-ul complet
-          initialDelaySeconds: 300
+          initialDelaySeconds: 120
           periodSeconds: 30
-          timeoutSeconds: 10
+          timeoutSeconds: 5
           failureThreshold: 3
+        startupProbe:
+          tcpSocket:
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 30
       volumes:
       - name: wordpress-storage
-        hostPath:
-          path: /var/wordpress
-          type: DirectoryOrCreate
+        persistentVolumeClaim:
+          claimName: wordpress-shared-pvc

@@ -106,6 +106,7 @@ microk8s kubectl apply -k .
 ```bash
 # Șterge toate resursele create de acest proiect
 microk8s kubectl delete -k .
+sudo rm -rf /var/wordpress/* || true
 ```
 
 ### 🐳 Curățare imagini Docker
