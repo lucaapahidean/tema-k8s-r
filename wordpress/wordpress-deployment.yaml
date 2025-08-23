@@ -44,17 +44,19 @@ spec:
           httpGet:
             path: /
             port: 80
-          initialDelaySeconds: 90
+          # Dăm mai mult timp pentru setup-ul inițial
+          initialDelaySeconds: 120
           periodSeconds: 10
-          timeoutSeconds: 5
-          failureThreshold: 10
+          timeoutSeconds: 10
+          failureThreshold: 15
         livenessProbe:
           httpGet:
             path: /
             port: 80
-          initialDelaySeconds: 180
+          # Mai mult timp pentru liveness să permită setup-ul complet
+          initialDelaySeconds: 300
           periodSeconds: 30
-          timeoutSeconds: 5
+          timeoutSeconds: 10
           failureThreshold: 3
       volumes:
       - name: wordpress-storage

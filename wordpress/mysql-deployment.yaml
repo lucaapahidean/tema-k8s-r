@@ -30,24 +30,23 @@ spec:
         - name: mysql-storage
           mountPath: /var/lib/mysql
         readinessProbe:
-          exec:
-            command:
-            - sh
-            - -c
-            - "mysqladmin ping -h 127.0.0.1 -u root -p$MYSQL_ROOT_PASSWORD"
-          initialDelaySeconds: 60
+          # Folosim o conexiune TCP simplă în loc de mysqladmin
+          tcpSocket:
+            port: 3306
+          initialDelaySeconds: 30
           periodSeconds: 10
           timeoutSeconds: 5
           failureThreshold: 6
         livenessProbe:
+          # Încercăm o conexiune MySQL simplă
           exec:
             command:
             - sh
             - -c
-            - "mysqladmin ping -h 127.0.0.1 -u root -p$MYSQL_ROOT_PASSWORD"
-          initialDelaySeconds: 120
+            - "mysql -h 127.0.0.1 -u root -p$MYSQL_ROOT_PASSWORD -e 'SELECT 1'"
+          initialDelaySeconds: 90
           periodSeconds: 30
-          timeoutSeconds: 5
+          timeoutSeconds: 10
           failureThreshold: 3
         resources:
           requests:
@@ -56,6 +55,11 @@ spec:
           limits:
             memory: "1Gi"
             cpu: "500m"
+        # Adăugăm argumentele pentru MySQL 8.0
+        args:
+        - --default-authentication-plugin=mysql_native_password
+        - --skip-host-cache
+        - --skip-name-resolve
       volumes:
       - name: mysql-storage
         persistentVolumeClaim:

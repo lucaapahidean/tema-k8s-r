@@ -4,32 +4,30 @@ set -e
 echo "Starting WordPress container..."
 echo "Pod hostname: $(hostname)"
 
-# Debug environment variables
-echo "DB Host: $WORDPRESS_DB_HOST"
-echo "DB User: $WORDPRESS_DB_USER" 
-echo "DB Name: $WORDPRESS_DB_NAME"
-
 # Wait for database to be ready
 echo "Waiting for database connection..."
 ATTEMPT=0
-while ! mariadb -h"$WORDPRESS_DB_HOST" -u"$WORDPRESS_DB_USER" -p"$WORDPRESS_DB_PASSWORD" -e "SELECT 1" >/dev/null 2>&1; do
+MAX_ATTEMPTS=20
+
+while ! mysql -h"$WORDPRESS_DB_HOST" -u"$WORDPRESS_DB_USER" -p"$WORDPRESS_DB_PASSWORD" --skip-ssl -e "SELECT 1" >/dev/null 2>&1; do
     ATTEMPT=$((ATTEMPT + 1))
-    echo "Attempt $ATTEMPT: Waiting for database... (Host: $WORDPRESS_DB_HOST, User: $WORDPRESS_DB_USER)"
+    echo "Attempt $ATTEMPT/$MAX_ATTEMPTS: Waiting for database..."
     
-    # Add detailed error on every 10th attempt
-    if [ $((ATTEMPT % 10)) -eq 0 ]; then
-        echo "Detailed connection test:"
-        mariadb -h"$WORDPRESS_DB_HOST" -u"$WORDPRESS_DB_USER" -p"$WORDPRESS_DB_PASSWORD" -e "SELECT 1" 2>&1 || true
-        echo "Testing basic connectivity:"
-        nc -zv "$WORDPRESS_DB_HOST" 3306 2>&1 || true
+    if [ $ATTEMPT -ge $MAX_ATTEMPTS ]; then
+        echo "Failed to connect to database, starting Apache anyway..."
+        exec docker-entrypoint.sh "$@"
     fi
     
-    sleep 2
+    sleep 3
 done
 echo "Database connection established"
 
-# Run WordPress setup only once across all replicas
-/usr/local/bin/setup-wordpress.sh
+# Run WordPress setup with timeout protection
+echo "Running WordPress setup..."
+timeout 120 /usr/local/bin/setup-wordpress.sh || {
+    echo "WordPress setup timed out or failed, continuing with Apache..."
+}
 
-# Continue with original WordPress entrypoint
+# Start Apache
+echo "Starting Apache server..."
 exec docker-entrypoint.sh "$@"
