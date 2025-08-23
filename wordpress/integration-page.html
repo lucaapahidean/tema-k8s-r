@@ -1,50 +1,108 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Fault Tolerant Systems - Integrated Platform</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud-Native Platform - Kubernetes Demo</title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 0;
             background: #f9f9f9;
-            min-height: 100vh;
             color: #111111;
             font-size: 1.05rem;
             line-height: 1.55;
         }
-        
-        .container {
+
+        /* Header Navigation */
+        .site-header {
+            background: #ffffff;
+            padding: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .header-container {
             max-width: 1200px;
             margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        
-        .header {
-            background: #ffffff;
-            border-radius: 8px;
-            padding: 60px 40px;
-            margin-bottom: 30px;
-            text-align: center;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-            border: 1px solid #e5e7eb;
-        }
-        
-        .header h1 {
+
+        .site-title {
+            font-size: 1.1rem;
+            font-weight: 600;
             color: #111111;
-            margin: 0 0 15px 0;
+            text-decoration: none;
+        }
+
+        .site-title:hover {
+            text-decoration: underline;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 20px;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .nav-menu a {
+            color: #636363;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .nav-menu a:hover,
+        .nav-menu a.current {
+            color: #111111;
+            text-decoration: underline;
+        }
+
+        /* Main Content */
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .page-title {
+            text-align: center;
+            font-family: 'Cardo', serif;
             font-size: 2.5rem;
             font-weight: 400;
-            font-family: 'Cardo', serif;
+            color: #111111;
+            margin-bottom: 60px;
             line-height: 1.2;
         }
-        
-        .header p {
+
+        .platform-intro {
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 40px;
+            margin-bottom: 40px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            border: 1px solid #e5e7eb;
+            text-align: center;
+        }
+
+        .platform-intro p {
             color: #636363;
             font-size: 1.2em;
             margin: 0;
-            font-weight: 400;
+            max-width: 800px;
+            margin: 0 auto;
         }
-        
+
         .app-section {
             background: #ffffff;
             border-radius: 8px;
@@ -54,11 +112,11 @@
             border: 1px solid #e5e7eb;
             transition: box-shadow 0.3s ease;
         }
-        
+
         .app-section:hover {
             box-shadow: 0 4px 16px rgba(0,0,0,0.08);
         }
-        
+
         .app-section h2 {
             color: #111111;
             margin-top: 0;
@@ -70,7 +128,34 @@
             font-family: 'Inter', sans-serif;
             font-weight: 600;
         }
-        
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background: #00d084;
+            border-radius: 50%;
+            margin-right: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+
+        .emoji-icon {
+            font-size: 1.2em;
+        }
+
+        .description {
+            color: #636363;
+            margin-bottom: 25px;
+            font-size: 1.05rem;
+            line-height: 1.6;
+        }
+
         .iframe-container {
             width: 100%;
             height: 600px;
@@ -80,7 +165,7 @@
             background: #f9f9f9;
             position: relative;
         }
-        
+
         .iframe-container::before {
             content: 'Loading application...';
             position: absolute;
@@ -91,7 +176,7 @@
             font-size: 1.1em;
             z-index: 1;
         }
-        
+
         iframe {
             width: 100%;
             height: 100%;
@@ -99,14 +184,7 @@
             position: relative;
             z-index: 2;
         }
-        
-        .description {
-            color: #636363;
-            margin-bottom: 25px;
-            font-size: 1.05rem;
-            line-height: 1.6;
-        }
-        
+
         .tech-stack {
             background: #f9f9f9;
             border-radius: 8px;
@@ -114,71 +192,29 @@
             margin-top: 20px;
             border-left: 3px solid #A4A4A4;
         }
-        
+
         .tech-stack h4 {
             margin: 0 0 15px 0;
             color: #111111;
             font-size: 1.1em;
             font-weight: 600;
         }
-        
+
         .tech-stack ul {
             margin: 0;
             padding-left: 20px;
             color: #636363;
         }
-        
+
         .tech-stack li {
             margin-bottom: 8px;
             line-height: 1.5;
         }
-        
+
         .tech-stack strong {
             color: #111111;
         }
-        
-        .status-indicator {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            background: #00d084;
-            border-radius: 50%;
-            margin-right: 10px;
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.6; }
-            100% { opacity: 1; }
-        }
-        
-        @media (max-width: 768px) {
-            body {
-                padding: 15px;
-            }
-            
-            .iframe-container {
-                height: 500px;
-            }
-            
-            .header {
-                padding: 40px 25px;
-            }
-            
-            .header h1 {
-                font-size: 2em;
-            }
-            
-            .header p {
-                font-size: 1em;
-            }
-            
-            .app-section {
-                padding: 25px;
-            }
-        }
-        
+
         .loading-overlay {
             position: absolute;
             top: 0;
@@ -192,7 +228,7 @@
             z-index: 10;
             transition: opacity 0.3s ease;
         }
-        
+
         .spinner {
             width: 32px;
             height: 32px;
@@ -201,32 +237,107 @@
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
-        
+
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
 
-        /* WordPress-inspired additional styling */
-        .emoji-icon {
-            font-size: 1.2em;
-        }
-        
         .section-divider {
             height: 1px;
             background: #e5e7eb;
             margin: 40px 0;
             border: none;
         }
+
+        /* Footer */
+        .site-footer {
+            background: #ffffff;
+            border-top: 1px solid #e5e7eb;
+            padding: 40px 0;
+            margin-top: 60px;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            text-align: center;
+            color: #636363;
+            font-size: 0.9rem;
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .header-container {
+                flex-direction: column;
+                gap: 15px;
+                padding: 0 15px;
+            }
+
+            .nav-menu {
+                gap: 15px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .main-content {
+                padding: 20px 15px;
+            }
+
+            .page-title {
+                font-size: 2rem;
+                margin-bottom: 40px;
+            }
+
+            .platform-intro,
+            .app-section {
+                padding: 25px;
+            }
+
+            .iframe-container {
+                height: 500px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .nav-menu {
+                display: none;
+            }
+            
+            .page-title {
+                font-size: 1.8rem;
+            }
+            
+            .platform-intro .platform-intro p {
+                font-size: 1rem;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🚀 Cloud-Native Platform</h1>
-            <p>Integrated Kubernetes deployment with WordPress CMS, Real-time Chat, and AI Applications</p>
+    <!-- Header -->
+    <header class="site-header">
+        <div class="header-container">
+            <a href="#" class="site-title">Cloud-Native Platform – Kubernetes Demo</a>
+            <nav>
+                <ul class="nav-menu">
+                    <li><a href="#" class="current">Integrated Platform</a></li>
+                    <li><a href="#">Sample Page</a></li>
+                    <li><a href="#">Test Page</a></li>
+                </ul>
+            </nav>
         </div>
-        
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <h1 class="page-title">Integrated Platform</h1>
+
+        <div class="platform-intro">
+            <p>🚀 Integrated Kubernetes deployment with WordPress CMS, Real-time Chat, and AI Applications</p>
+        </div>
+
         <div class="app-section">
             <h2>
                 <span class="status-indicator"></span>
@@ -260,9 +371,9 @@
                 </ul>
             </div>
         </div>
-        
+
         <hr class="section-divider">
-        
+
         <div class="app-section">
             <h2>
                 <span class="status-indicator"></span>
@@ -296,8 +407,15 @@
                 </ul>
             </div>
         </div>
-    </div>
-    
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+        <div class="footer-content">
+            <p>Designed with WordPress – Cloud-Native Platform Demo</p>
+        </div>
+    </footer>
+
     <script>
         function hideLoading(loadingId) {
             const loading = document.getElementById(loadingId);
