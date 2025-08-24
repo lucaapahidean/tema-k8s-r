@@ -49,8 +49,8 @@ RUN { \
 RUN mkdir -p /var/www/html /var/log/apache2 \
     && chown -R www-data:www-data /var/www/html /var/log/apache2
 
-# Copy integration page template
-COPY integration-page.html /tmp/integration-page.html
+# Copy integration page PHP template
+COPY integration-page.php /tmp/integration-page.php
 
 # Copy setup script
 COPY setup-wordpress.sh /usr/local/bin/setup-wordpress.sh

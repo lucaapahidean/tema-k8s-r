@@ -1,4 +1,18 @@
-<!DOCTYPE html>
+<?php
+/**
+ * Template Name: Integration Platform
+ * Custom template that bypasses WordPress theme to serve clean HTML
+ */
+
+// Get the Node IP from environment or use localhost as fallback
+$node_ip = $_ENV['KUBERNETES_NODE_IP'] ?? getenv('KUBERNETES_NODE_IP') ?: 'localhost';
+
+// Set proper headers
+header('Content-Type: text/html; charset=UTF-8');
+header('X-Frame-Options: SAMEORIGIN');
+
+// Output the complete HTML document
+?><!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -345,12 +359,12 @@
     <!-- Header -->
     <header class="site-header">
         <div class="header-container">
-            <a href="#" class="site-title">Cloud-Native Platform – Kubernetes Demo</a>
+            <a href="/" class="site-title">Cloud-Native Platform – Kubernetes Demo</a>
             <nav>
                 <ul class="nav-menu">
-                    <li><a href="#" class="current">Integrated Platform</a></li>
-                    <li><a href="#">Sample Page</a></li>
-                    <li><a href="#">Test Page</a></li>
+                    <li><a href="/" class="current">Integrated Platform</a></li>
+                    <li><a href="/test-page/">Test Page</a></li>
+                    <li><a href="/wp-admin/">WordPress Admin</a></li>
                 </ul>
             </nav>
         </div>
@@ -366,9 +380,9 @@
 
         <!-- Connection Status -->
         <div class="connection-info">
-            <strong>Node IP:</strong> {{NODE_IP}} | 
-            <strong>Chat URL:</strong> http://{{NODE_IP}}:30090 | 
-            <strong>AI URL:</strong> http://{{NODE_IP}}:30180
+            <strong>Node IP:</strong> <?php echo htmlspecialchars($node_ip); ?> | 
+            <strong>Chat URL:</strong> http://<?php echo htmlspecialchars($node_ip); ?>:30090 | 
+            <strong>AI URL:</strong> http://<?php echo htmlspecialchars($node_ip); ?>:30180
         </div>
 
         <div class="app-section">
@@ -386,7 +400,7 @@
                     <div class="spinner"></div>
                 </div>
                 <iframe 
-                    src="http://{{NODE_IP}}:30090" 
+                    src="http://<?php echo htmlspecialchars($node_ip); ?>:30090" 
                     id="chat-iframe"
                     title="Chat Application"
                     allow="clipboard-write"
@@ -423,7 +437,7 @@
                     <div class="spinner"></div>
                 </div>
                 <iframe 
-                    src="http://{{NODE_IP}}:30180" 
+                    src="http://<?php echo htmlspecialchars($node_ip); ?>:30180" 
                     id="ai-iframe"
                     title="AI Image Analysis"
                     allow="clipboard-write"
@@ -474,6 +488,7 @@
         
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Integration page loaded');
+            console.log('Node IP: <?php echo htmlspecialchars($node_ip); ?>');
             console.log('Chat iframe source:', document.getElementById('chat-iframe').src);
             console.log('AI iframe source:', document.getElementById('ai-iframe').src);
             
@@ -489,4 +504,7 @@
         });
     </script>
 </body>
-</html>
+</html><?php
+// Ensure output is sent immediately and prevent WordPress from adding anything else
+exit;
+?>
