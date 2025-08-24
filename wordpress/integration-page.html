@@ -267,6 +267,30 @@
             font-size: 0.9rem;
         }
 
+        /* Connection Status */
+        .connection-info {
+            background: #e8f5e8;
+            border: 1px solid #4CAF50;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+        }
+
+        .connection-info strong {
+            color: #2e7d2e;
+        }
+
+        .error-info {
+            background: #ffeaea;
+            border: 1px solid #f44336;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+            color: #d32f2f;
+        }
+
         /* Mobile Responsiveness */
         @media (max-width: 768px) {
             .header-container {
@@ -313,6 +337,25 @@
                 font-size: 1rem;
             }
         }
+
+        /* Scrollbar styling */
+        .messages::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .messages::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .messages::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+
+        .messages::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
     </style>
 </head>
 <body>
@@ -338,6 +381,13 @@
             <p>🚀 Integrated Kubernetes deployment with WordPress CMS, Real-time Chat, and AI Applications</p>
         </div>
 
+        <!-- Connection Status -->
+        <div class="connection-info">
+            <strong>Node IP:</strong> {{NODE_IP}} | 
+            <strong>Chat URL:</strong> http://{{NODE_IP}}:30090 | 
+            <strong>AI URL:</strong> http://{{NODE_IP}}:30180
+        </div>
+
         <div class="app-section">
             <h2>
                 <span class="status-indicator"></span>
@@ -353,11 +403,12 @@
                     <div class="spinner"></div>
                 </div>
                 <iframe 
-                    src="" 
+                    src="http://{{NODE_IP}}:30090" 
                     id="chat-iframe"
                     title="Chat Application"
                     allow="clipboard-write"
-                    onload="hideLoading('chat-loading')">
+                    onload="hideLoading('chat-loading')"
+                    onerror="showError('chat-iframe', 'chat-loading')">
                 </iframe>
             </div>
             <div class="tech-stack">
@@ -389,11 +440,12 @@
                     <div class="spinner"></div>
                 </div>
                 <iframe 
-                    src="" 
+                    src="http://{{NODE_IP}}:30180" 
                     id="ai-iframe"
                     title="AI Image Analysis"
                     allow="clipboard-write"
-                    onload="hideLoading('ai-loading')">
+                    onload="hideLoading('ai-loading')"
+                    onerror="showError('ai-iframe', 'ai-loading')">
                 </iframe>
             </div>
             <div class="tech-stack">
@@ -429,20 +481,25 @@
             }
         }
         
+        function showError(iframeId, loadingId) {
+            hideLoading(loadingId);
+            const iframe = document.getElementById(iframeId);
+            if (iframe) {
+                const container = iframe.parentElement;
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error-info';
+                errorDiv.innerHTML = `
+                    <strong>Connection Error:</strong> Unable to load ${iframeId.replace('-iframe', '')} application. 
+                    Please check if the service is running and accessible.
+                `;
+                container.parentElement.insertBefore(errorDiv, container);
+            }
+        }
+        
         document.addEventListener('DOMContentLoaded', function() {
-            const nodeIP = window.location.hostname; 
-            
-            // Configure chat iframe
-            const chatIframe = document.getElementById('chat-iframe');
-            if (chatIframe) {
-                chatIframe.src = `http://${nodeIP}:30090`;
-            }
-            
-            // Configure AI iframe  
-            const aiIframe = document.getElementById('ai-iframe');
-            if (aiIframe) {
-                aiIframe.src = `http://${nodeIP}:30180`;
-            }
+            console.log('Integration page loaded');
+            console.log('Chat iframe source:', document.getElementById('chat-iframe').src);
+            console.log('AI iframe source:', document.getElementById('ai-iframe').src);
             
             // Auto-hide loading overlays if iframes don't load
             setTimeout(() => {
@@ -452,17 +509,8 @@
                         hideLoading(loading.id);
                     }
                 });
-            }, 5000);
+            }, 10000);
         });
-        
-        // Handle iframe errors
-        document.getElementById('chat-iframe').onerror = function() {
-            hideLoading('chat-loading');
-        };
-        
-        document.getElementById('ai-iframe').onerror = function() {
-            hideLoading('ai-loading');
-        };
     </script>
 </body>
 </html>

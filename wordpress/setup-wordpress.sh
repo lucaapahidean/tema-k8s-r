@@ -85,6 +85,32 @@ require_once ABSPATH . 'wp-settings.php';
 WPCONFIG
 }
 
+# Function to process template and replace placeholders
+process_integration_template() {
+    local node_ip="$1"
+    local template_file="$2"
+    local output_file="$3"
+    
+    if [ ! -f "$template_file" ]; then
+        echo "Warning: Template file $template_file not found"
+        return 1
+    fi
+    
+    echo "Processing integration template with Node IP: $node_ip"
+    
+    # Use sed to replace {{NODE_IP}} placeholder with actual node IP
+    sed "s/{{NODE_IP}}/$node_ip/g" "$template_file" > "$output_file"
+    
+    if [ -f "$output_file" ]; then
+        echo "Integration page template processed successfully: $output_file"
+        chown www-data:www-data "$output_file"
+        return 0
+    else
+        echo "Error: Failed to create processed integration page"
+        return 1
+    fi
+}
+
 # Check if setup is already complete
 if [ -f "$COMPLETE_FILE" ]; then
     echo "WordPress already configured (complete file exists)"
@@ -94,6 +120,12 @@ if [ -f "$COMPLETE_FILE" ]; then
         echo "Recreating wp-config.php..."
         create_wp_config
         chown www-data:www-data wp-config.php
+    fi
+    
+    # Always reprocess the integration template in case the node IP changed
+    NODE_IP="${KUBERNETES_NODE_IP:-localhost}"
+    if [ -f "/tmp/integration-page.html" ]; then
+        process_integration_template "$NODE_IP" "/tmp/integration-page.html" "/tmp/integration-page-processed.html"
     fi
     
     exit 0
@@ -134,6 +166,20 @@ if [ "$LOCK_ACQUIRED" = "true" ]; then
     SITE_URL="http://$NODE_IP:30080"
     
     echo "Configuring WordPress for URL: $SITE_URL"
+    echo "Node IP: $NODE_IP"
+
+    # Process integration template first
+    TEMPLATE_PROCESSED=false
+    if [ -f "/tmp/integration-page.html" ]; then
+        if process_integration_template "$NODE_IP" "/tmp/integration-page.html" "/tmp/integration-page-processed.html"; then
+            TEMPLATE_PROCESSED=true
+            echo "Integration template processing: SUCCESS"
+        else
+            echo "Integration template processing: FAILED - will use fallback"
+        fi
+    else
+        echo "Integration template not found: /tmp/integration-page.html"
+    fi
 
     # Remove any existing wp-config
     rm -f wp-config.php wp-config-sample.php
@@ -207,27 +253,57 @@ HTACCESS
     echo "Creating integration page..."
     PAGE_EXISTS=$(wp post list --post_type=page --title="Integrated Platform" --format=count --allow-root 2>/dev/null || echo "0")
 
-    if [ "$PAGE_EXISTS" = "0" ] && [ -f "/tmp/integration-page.html" ]; then
-        # Create the page
-        HOMEPAGE_ID=$(wp post create /tmp/integration-page.html \
-            --post_type=page \
-            --post_title="Integrated Platform" \
-            --post_status=publish \
-            --post_name="home" \
-            --format=ids \
-            --allow-root) || {
-                echo "Failed to create integration page"
-                HOMEPAGE_ID=""
-            }
+    if [ "$PAGE_EXISTS" = "0" ]; then
+        # Use processed template if available, otherwise use original
+        TEMPLATE_TO_USE="/tmp/integration-page.html"
+        if [ "$TEMPLATE_PROCESSED" = "true" ] && [ -f "/tmp/integration-page-processed.html" ]; then
+            TEMPLATE_TO_USE="/tmp/integration-page-processed.html"
+            echo "Using processed integration template"
+        else
+            echo "Using original integration template (fallback)"
+        fi
         
-        if [ -n "$HOMEPAGE_ID" ]; then
-            # Set as homepage
-            wp option update show_on_front page --allow-root
-            wp option update page_on_front "$HOMEPAGE_ID" --allow-root
-            echo "Integration page created and set as homepage (ID: $HOMEPAGE_ID)"
+        if [ -f "$TEMPLATE_TO_USE" ]; then
+            # Create the page
+            HOMEPAGE_ID=$(wp post create "$TEMPLATE_TO_USE" \
+                --post_type=page \
+                --post_title="Integrated Platform" \
+                --post_status=publish \
+                --post_name="home" \
+                --format=ids \
+                --allow-root) || {
+                    echo "Failed to create integration page"
+                    HOMEPAGE_ID=""
+                }
+            
+            if [ -n "$HOMEPAGE_ID" ]; then
+                # Set as homepage
+                wp option update show_on_front page --allow-root
+                wp option update page_on_front "$HOMEPAGE_ID" --allow-root
+                echo "Integration page created and set as homepage (ID: $HOMEPAGE_ID)"
+                
+                if [ "$TEMPLATE_PROCESSED" = "true" ]; then
+                    echo "✓ Integration page includes proper Node IP: $NODE_IP"
+                else
+                    echo "⚠ Integration page uses fallback template - iframes may need manual configuration"
+                fi
+            fi
+        else
+            echo "No integration template found"
         fi
     else
-        echo "Integration page already exists or template not found"
+        echo "Integration page already exists"
+        
+        # Try to update existing page with processed template if available
+        if [ "$TEMPLATE_PROCESSED" = "true" ] && [ -f "/tmp/integration-page-processed.html" ]; then
+            echo "Updating existing integration page with processed template..."
+            EXISTING_PAGE_ID=$(wp post list --post_type=page --title="Integrated Platform" --format=ids --allow-root 2>/dev/null | head -1)
+            if [ -n "$EXISTING_PAGE_ID" ]; then
+                wp post update "$EXISTING_PAGE_ID" "/tmp/integration-page-processed.html" --allow-root || {
+                    echo "Failed to update existing integration page"
+                }
+            fi
+        fi
     fi
 
     # Create a simple test page
@@ -235,7 +311,7 @@ HTACCESS
     wp post create \
         --post_type=page \
         --post_title="Test Page" \
-        --post_content="<h1>WordPress is running on Kubernetes!</h1><p>Node IP: $NODE_IP</p>" \
+        --post_content="<h1>WordPress is running on Kubernetes!</h1><p>Node IP: $NODE_IP</p><p>Chat: http://$NODE_IP:30090</p><p>AI: http://$NODE_IP:30180</p>" \
         --post_status=publish \
         --allow-root 2>/dev/null || true
 
@@ -258,6 +334,14 @@ HTACCESS
     echo "Admin URL: $SITE_URL/wp-admin"
     echo "Username: admin"
     echo "Password: admin123"
+    echo "Node IP: $NODE_IP"
+    echo "Chat App: http://$NODE_IP:30090"
+    echo "AI App: http://$NODE_IP:30180"
+    if [ "$TEMPLATE_PROCESSED" = "true" ]; then
+        echo "✓ Integration template processed with correct IPs"
+    else
+        echo "⚠ Integration template may need manual configuration"
+    fi
     echo "================================"
     
 else
@@ -275,6 +359,12 @@ else
                 echo "Creating wp-config.php..."
                 create_wp_config
                 chown www-data:www-data wp-config.php
+            fi
+            
+            # Always reprocess the integration template in case the node IP changed
+            NODE_IP="${KUBERNETES_NODE_IP:-localhost}"
+            if [ -f "/tmp/integration-page.html" ]; then
+                process_integration_template "$NODE_IP" "/tmp/integration-page.html" "/tmp/integration-page-processed.html"
             fi
             
             exit 0
