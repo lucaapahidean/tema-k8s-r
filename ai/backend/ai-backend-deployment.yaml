@@ -28,7 +28,7 @@ spec:
         - name: AZURE_CONTAINER_NAME
           value: "images"
         - name: AZURE_OCR_ENDPOINT
-          value: "https://temaocr.cognitiveservices.azure.com/"
+          value: "https://proiect.cognitiveservices.azure.com/"
         - name: AZURE_OCR_API_KEY
           valueFrom:
             secretKeyRef:
