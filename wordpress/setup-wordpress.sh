@@ -239,15 +239,8 @@ RewriteRule ^(.*)$ http://%{HTTP_HOST}/$1 [R=301,L]
 </IfModule>
 HTACCESS
 
-    # Install and activate theme
-    echo "Setting up theme..."
-    if ! wp theme is-installed twentytwentyfour --allow-root 2>/dev/null; then
-        wp theme install twentytwentyfour --activate --allow-root || {
-            echo "Theme installation failed, using default"
-        }
-    else
-        wp theme activate twentytwentyfour --allow-root || true
-    fi
+    # Use default WordPress theme (no custom theme installation)
+    echo "Using default WordPress theme..."
 
     # Create integration page if it doesn't exist
     echo "Creating integration page..."
