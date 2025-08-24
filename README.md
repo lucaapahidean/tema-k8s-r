@@ -1,4 +1,3 @@
-
 # Site Web cu Chat și IA peste Kubernetes
 
 ## 🎯 Descriere
@@ -98,6 +97,26 @@ docker push localhost:32000/custom-wordpress:latest
 ### 3. 🎯 Deploy complet (o singură comandă)
 ```bash
 microk8s kubectl apply -k .
+```
+
+### 4. 📊 Monitoring și tracking deployment
+
+#### Tracking log-uri Wordpress în timpul deploy-ului
+```bash
+# Urmărește log-urile pentru toate pod-urile Wordpress în timp real
+microk8s kubectl logs -l app=wordpress -f
+```
+
+#### Verificare status pod-uri și servicii
+```bash
+# Verifică statusul tuturor pod-urilor
+microk8s kubectl get pods
+
+# Verifică statusul serviciilor
+microk8s kubectl get services
+
+# Urmărește progresul deployment-urilor
+microk8s kubectl get deployments -w
 ```
 
 ## 🧹 Ștergerea resurselor
