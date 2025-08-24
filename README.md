@@ -59,9 +59,25 @@ sudo microk8s config > ~/.kube/config
 2.  **👁️ Computer Vision** pentru **Image Description**.
 3.  **🗄️ SQL Database** cu SQL Authentication activat.
 
-### 🔑 Configurare variabile Azure
+### 🔑 Configurare secrete Azure
 
-Editează `secrets/azure-secrets.yaml` cu credențialele tale (codificate în base64).
+Editează `secrets/azure-secrets.yaml` cu credențialele tale.
+
+### ☁️ Configurare pentru Azure Cloud
+
+**Important:** Când rulezi pe Azure Cloud, trebuie să modifici `wordpress/wordpress-deployment.yaml` pentru a seta IP-ul extern al cluster-ului:
+
+```yaml
+# Înlocuiește această secțiune:
+- name: KUBERNETES_NODE_IP
+  valueFrom:
+    fieldRef:
+      fieldPath: status.hostIP
+
+# Cu:
+- name: KUBERNETES_NODE_IP
+  value: "4.211.207.105"  # Înlocuiește cu IP-ul real al VM-ului Azure
+```
 
 ## 🚀 Instalare și deployment
 
