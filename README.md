@@ -50,7 +50,8 @@ sudo microk8s start
 sudo microk8s enable registry dns hostpath-storage
 
 # Alias pentru kubectl (opțional)
-sudo microk8s config > ~/.kube/config
+echo "alias kubectl='microk8s kubectl'" >> ~/.bash_aliases
+su - $USER
 ```
 
 ### Azure Services necesare
