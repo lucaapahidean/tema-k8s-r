@@ -52,4 +52,4 @@ credentials.json
 .DS_Store
 Thumbs.db
 
-# azure-secrets.yaml
+azure-secrets.yaml
