@@ -81,13 +81,7 @@ Editează `secrets/azure-secrets.yaml` cu credențialele tale.
 
 ## 🚀 Instalare și deployment
 
-### 1. 🔧 Configurare secrete Azure
-```bash
-# Editează secrets/azure-secrets.yaml cu credențialele tale
-nano secrets/azure-secrets.yaml
-```
-
-### 2. 🏗️ Build și push imagini
+### 1. 🏗️ Build și push imagini
 ```bash
 # Chat Backend
 docker build -t localhost:32000/chat-backend:latest ./chat/backend
@@ -110,12 +104,12 @@ docker build -t localhost:32000/custom-wordpress:latest ./wordpress
 docker push localhost:32000/custom-wordpress:latest
 ```
 
-### 3. 🎯 Deploy complet (o singură comandă)
+### 2. 🎯 Deploy complet (o singură comandă)
 ```bash
 microk8s kubectl apply -k .
 ```
 
-### 4. 📊 Monitoring și tracking deployment
+### 3. 📊 Monitoring și tracking deployment
 
 #### Tracking log-uri Wordpress în timpul deploy-ului
 ```bash
