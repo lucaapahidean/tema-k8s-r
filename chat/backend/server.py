@@ -47,44 +47,49 @@ redis_client = None
 redis_pubsub = None
 active_connections: List[WebSocket] = []
 
+async def ensure_mongodb_connection():
+    """Ensure MongoDB is connected and database is initialized"""
+    global mongo_client, database
+    
+    if database is not None:
+        # Test if connection is still alive
+        try:
+            await mongo_client.admin.command('ping')
+            return True
+        except:
+            database = None
+    
+    # Try to connect/reconnect
+    try:
+        if mongo_client is None:
+            mongo_client = AsyncIOMotorClient(
+                MONGO_URL,
+                serverSelectionTimeoutMS=5000,
+                connectTimeoutMS=5000,
+                socketTimeoutMS=5000
+            )
+        
+        await mongo_client.admin.command('ping')
+        database = mongo_client.get_database('chatdb')
+        await database.messages.create_index("timestamp")
+        
+        count = await database.messages.count_documents({})
+        logger.info(f"MongoDB (re)connected successfully. Existing messages: {count}")
+        return True
+        
+    except Exception as e:
+        logger.error(f"MongoDB connection attempt failed: {e}")
+        database = None
+        return False
+
 @app.on_event("startup")
 async def startup_event():
     global mongo_client, database, redis_client, redis_pubsub
     
     logger.info(f"Starting up with MONGO_URL: {MONGO_URL}")
     
-    try:
-        # Conectare MongoDB cu setări mai explicite
-        mongo_client = AsyncIOMotorClient(
-            MONGO_URL,
-            serverSelectionTimeoutMS=5000,
-            connectTimeoutMS=5000,
-            socketTimeoutMS=5000
-        )
-        
-        # Test explicit connection
-        await mongo_client.admin.command('ping')
-        logger.info("MongoDB ping successful")
-        
-        # Explicitly select database
-        database = mongo_client.get_database('chatdb')
-        
-        # Create index for messages
-        await database.messages.create_index("timestamp")
-        
-        # Test write/read to verify connection
-        test_doc = {"test": True, "timestamp": datetime.now()}
-        result = await database.test.insert_one(test_doc)
-        logger.info(f"Test document inserted with id: {result.inserted_id}")
-        await database.test.delete_one({"_id": result.inserted_id})
-        
-        # Count existing messages
-        count = await database.messages.count_documents({})
-        logger.info(f"MongoDB connected successfully. Existing messages: {count}")
-        
-    except Exception as e:
-        logger.error(f"MongoDB connection failed: {e}", exc_info=True)
-        database = None
+    # Try to connect to MongoDB (don't fail startup if it's not ready)
+    await ensure_mongodb_connection()
     
     try:
         # Conectare Redis
@@ -141,6 +146,11 @@ async def root():
 
 @app.get("/health")
 async def health():
+    global database  # Declare database as global since we might modify it
+    
+    # Try to connect to MongoDB if not connected
+    await ensure_mongodb_connection()
+    
     mongo_status = "disconnected"
     message_count = 0
     
@@ -151,6 +161,7 @@ async def health():
             message_count = await database.messages.count_documents({})
         except:
             mongo_status = "error"
+            database = None  # Reset to trigger reconnection on next attempt
     
     return {
         "status": "ok",
@@ -163,8 +174,9 @@ async def health():
 @app.get("/messages")
 async def get_messages():
     try:
-        if database is None:
-            logger.warning("Database not connected when fetching messages via HTTP")
+        # Try to ensure MongoDB connection
+        if not await ensure_mongodb_connection():
+            logger.warning("Could not connect to MongoDB when fetching messages via HTTP")
             return []
         
         # Get all messages, sorted by timestamp
@@ -219,17 +231,9 @@ async def send_message_history(websocket: WebSocket):
     try:
         logger.info("Attempting to send message history to new client...")
         
-        if database is None:
-            logger.warning("Database is None - sending empty history")
-            response = {"type": "history", "data": []}
-            await websocket.send_text(json.dumps(response))
-            return
-        
-        # Verifică conexiunea la MongoDB
-        try:
-            await mongo_client.admin.command('ping')
-        except Exception as e:
-            logger.error(f"MongoDB ping failed when sending history: {e}")
+        # Try to ensure MongoDB connection
+        if not await ensure_mongodb_connection():
+            logger.warning("Could not connect to MongoDB - sending empty history")
             response = {"type": "history", "data": []}
             await websocket.send_text(json.dumps(response))
             return
@@ -287,9 +291,9 @@ async def handle_websocket_message(raw_data: str):
         # Prepare timestamp
         timestamp = datetime.now()
         
-        # Save to MongoDB if connected
+        # Try to ensure MongoDB connection and save if possible
         saved_to_db = False
-        if database is not None:
+        if await ensure_mongodb_connection():
             try:
                 document = {
                     "username": message_data.username,
@@ -310,7 +314,7 @@ async def handle_websocket_message(raw_data: str):
             except Exception as e:
                 logger.error(f"Error saving to MongoDB: {e}", exc_info=True)
         else:
-            logger.warning("Database not connected - message not persisted")
+            logger.warning("Could not connect to MongoDB - message not persisted")
         
         # Prepare response for broadcast
         response = {
@@ -346,8 +350,9 @@ async def handle_websocket_message(raw_data: str):
 @app.get("/debug/messages")
 async def debug_messages():
     """Debug endpoint to check database content"""
-    if database is None:
-        return {"error": "Database not connected"}
+    # Try to ensure MongoDB connection
+    if not await ensure_mongodb_connection():
+        return {"error": "Database not connected and cannot reconnect"}
     
     try:
         count = await database.messages.count_documents({})
