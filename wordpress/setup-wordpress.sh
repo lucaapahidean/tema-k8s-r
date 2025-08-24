@@ -308,12 +308,19 @@ HTACCESS
 
     # Create a simple test page
     echo "Creating test page..."
-    wp post create \
-        --post_type=page \
-        --post_title="Test Page" \
-        --post_content="<h1>WordPress is running on Kubernetes!</h1><p>Node IP: $NODE_IP</p><p>Chat: http://$NODE_IP:30090</p><p>AI: http://$NODE_IP:30180</p>" \
-        --post_status=publish \
-        --allow-root 2>/dev/null || true
+    TEST_PAGE_EXISTS=$(wp post list --post_type=page --title="Test Page" --format=count --allow-root 2>/dev/null || echo "0")
+
+    if [ "$TEST_PAGE_EXISTS" = "0" ]; then
+        wp post create \
+            --post_type=page \
+            --post_title="Test Page" \
+            --post_content="<h1>WordPress is running on Kubernetes!</h1><p>Node IP: $NODE_IP</p><p>Chat: http://$NODE_IP:30090</p><p>AI: http://$NODE_IP:30180</p>" \
+            --post_status=publish \
+            --allow-root 2>/dev/null || true
+        echo "Test page created successfully"
+    else
+        echo "Test page already exists (count: $TEST_PAGE_EXISTS)"
+    fi
 
     # Disable all plugins that might cause redirects
     wp plugin deactivate --all --allow-root 2>/dev/null || true
