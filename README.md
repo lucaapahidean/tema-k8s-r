@@ -52,6 +52,9 @@ sudo microk8s enable registry dns hostpath-storage
 # Alias pentru kubectl (opțional)
 echo "alias kubectl='microk8s kubectl'" >> ~/.bash_aliases
 su - $USER
+
+# Pentru a putea folosi acest registry pe http din k8s e necesar să creați fișierul /etc/docker/daemon.json
+sudo mkdir -p /etc/docker && sudo tee /etc/docker/daemon.json <<< '{"insecure-registries": ["localhost:32000"]}'
 ```
 
 ### Azure Services necesare
